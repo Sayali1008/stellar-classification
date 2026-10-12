@@ -1,5 +1,9 @@
-pandas
-numpy
-scikit-learn
-matplotlib
-seaborn
+fastapi==0.143.0
+joblib==1.6.0
+mangum==0.22.0
+numpy==2.5.4
+pandas==3.0.6
+pydantic==2.14.1
+scikit-learn==1.9.1
+scipy==1.18.1
+threadpoolctl==3.7.0
