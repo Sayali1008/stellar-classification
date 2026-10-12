@@ -2,6 +2,7 @@
 # The five filter values are magnitudes, which work backwards: a smaller number means brighter.
 # The difference between two filters (e.g. u − g) is called a color and tells you whether
 # the object gives off more blue or more red light.
+from src.config import FINAL_FEATURES
 
 
 def add_colors(df):
@@ -12,3 +13,8 @@ def add_colors(df):
     df['r_i'] = df['r'] - df['i']
     df['i_z'] = df['i'] - df['z']
     return df
+
+
+def select_final_features(df):
+    """Keep only the columns the model is trained on, in a fixed order."""
+    return df[FINAL_FEATURES]
