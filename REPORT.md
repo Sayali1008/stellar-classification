@@ -161,7 +161,7 @@ The final model was trained on all training rows and scored once on the test set
 2. Download the SDSS17 stellar classification CSV into `data/star_classification.csv`.
 3. Run the pipeline:
    ```bash
-   python main.py
+   python train.py
    ```
 
-It prints the classification report, macro F1 and feature importances, and saves the confusion matrix to `outputs/confusion_matrix.png`.
+It prints the classification report, macro F1 and feature importances, saves the confusion matrix to `outputs/confusion_matrix.png`, and saves the model and its metadata to `artifacts/`.

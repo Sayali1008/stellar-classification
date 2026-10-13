@@ -4,6 +4,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = PROJECT_ROOT / 'data' / 'star_classification.csv'
 OUTPUT_DIR = PROJECT_ROOT / 'outputs'
 
+# Saved model + its metadata, written by train.py and loaded by the API
+ARTIFACTS_DIR = PROJECT_ROOT / 'artifacts'
+MODEL_PATH = ARTIFACTS_DIR / 'model.joblib'
+METADATA_PATH = ARTIFACTS_DIR / 'metadata.json'
+
 # ID columns are loaded as strings: they label things, they are not measurements
 ID_COLS = ['obj_ID', 'spec_obj_ID', 'run_ID', 'rerun_ID', 'cam_col', 'field_ID', 'plate', 'fiber_ID']
 
@@ -21,4 +26,9 @@ PLACEHOLDER = -9999
 
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
-N_ESTIMATORS = 200
+
+# Forest size, chosen by 5-fold CV on the training split (scripts/compare_forest_sizes.py):
+# the smallest setting within one standard deviation of the best macro F1.
+# Best: 100 trees, min_samples_leaf=5, CV 0.8545 ± 0.0021 (15 MB). Chosen: 0.8531 at 7.5 MB,
+# versus 0.8544 at 48 MB for the original 200 unrestricted trees.
+FOREST_PARAMS = {'n_estimators': 50, 'min_samples_leaf': 5}

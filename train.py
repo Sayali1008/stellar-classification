@@ -1,5 +1,9 @@
-"""Train and evaluate the final star/galaxy/quasar classifier (random forest on colors + r)."""
-from src.config import FILTERS, OUTPUT_DIR
+"""Train, evaluate and save the final star/galaxy/quasar classifier (random forest on colors + r).
+
+Writes artifacts/model.joblib and artifacts/metadata.json for the API to load.
+"""
+from src.artifacts import build_metadata, save_artifacts
+from src.config import FILTERS, METADATA_PATH, MODEL_PATH, OUTPUT_DIR
 from src.data import load_data
 from src.evaluate import feature_importances, plot_confusion_matrix, print_report
 from src.model import build_model, split_data, train
@@ -24,6 +28,11 @@ def main():
     cm_path = OUTPUT_DIR / 'confusion_matrix.png'
     plot_confusion_matrix(y_test, preds, cm_path)
     print(f'\nConfusion matrix saved to {cm_path}')
+
+    metadata = build_metadata(model, y_test, preds)
+    size_mb = save_artifacts(model, metadata)
+    print(f'Model saved to {MODEL_PATH} ({size_mb:.1f} MB)')
+    print(f"Metadata saved to {METADATA_PATH} (version {metadata['model_version']})")
 
 
 if __name__ == '__main__':
