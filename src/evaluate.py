@@ -30,6 +30,11 @@ def plot_confusion_matrix(y_true, y_pred, path):
     plt.close()
 
 
-def feature_importances(model, features):
-    """Which features the forest relied on most (shares of total sorting work, sum to 1)."""
-    return pd.Series(model.feature_importances_, index=features).sort_values(ascending=False)
+def feature_importances(pipeline):
+    """Which features the forest relied on most (shares of total sorting work, sum to 1).
+
+    Column names come from the forest itself (feature_names_in_), so they always match
+    the columns it was actually trained on.
+    """
+    forest = pipeline.named_steps["model"]
+    return pd.Series(forest.feature_importances_, index=forest.feature_names_in_).sort_values(ascending=False)
