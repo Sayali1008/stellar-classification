@@ -16,7 +16,7 @@ Live: https://7ld2mronnk2hmj5mfmdup3h4rq0lxwbj.lambda-url.us-east-2.on.aws/
 |---|---|---|
 | ECR repository | `stellar-classifier-ecr` | Private, AES-256 encryption; images tagged with the model version |
 | IAM role | `stellar-classifier-lambda` | Trusted by `lambda.amazonaws.com` only; one policy, `AWSLambdaBasicExecutionRole` (write logs) |
-| Lambda function | `myStellarClassificationFunction` | Event function, container image, **arm64**, 1024 MB memory, 30 s timeout |
+| Lambda function | `myStellarClassificationFunction` | Event function, container image, **arm64**, 1024 MB memory, 30 s timeout, reserved concurrency 2 |
 | Function URL | (see above) | Auth type `NONE`; resource policy allows invoking only through the URL |
 | Log group | `/aws/lambda/myStellarClassificationFunction` | Created by Lambda on first run |
 
@@ -72,6 +72,12 @@ default execution role (`PowerUserRole`, near-full account access) → `stellar-
 ```bash
 aws lambda update-function-configuration --function-name $FUNCTION --memory-size 1024 --timeout 30 \
   --role arn:aws:iam::$ACCOUNT_ID:role/stellar-classifier-lambda
+```
+Cap how many copies of the function can run at once. The URL is public, so this limits how fast a
+flood of requests can spend money; requests beyond the cap get HTTP 429 and cost nothing. Two is
+plenty for a demo (a warm `/predict` takes ~20 ms):
+```bash
+aws lambda put-function-concurrency --function-name $FUNCTION --reserved-concurrent-executions 2
 ```
 
 **6. Create the public Function URL** (console: function → Configuration → Function URL → Create, auth type `NONE`)
