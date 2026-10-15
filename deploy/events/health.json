@@ -1,0 +1,24 @@
+{
+  "version": "2.0",
+  "routeKey": "$default",
+  "rawPath": "/health",
+  "rawQueryString": "",
+  "headers": {
+    "content-type": "application/json",
+    "host": "localhost"
+  },
+  "requestContext": {
+    "http": {
+      "method": "GET",
+      "path": "/health",
+      "protocol": "HTTP/1.1",
+      "sourceIp": "127.0.0.1",
+      "userAgent": "curl"
+    },
+    "domainName": "localhost",
+    "requestId": "local-test",
+    "stage": "$default"
+  },
+  "body": null,
+  "isBase64Encoded": false
+}
