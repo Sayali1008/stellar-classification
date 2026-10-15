@@ -1,0 +1,11 @@
+# Allow-list: Docker sees nothing except what the image needs.
+# New files (and above all data/) stay out unless added here on purpose.
+*
+!requirements.txt
+!src/
+!app/
+!artifacts/
+
+# Python cache files inside the allowed folders
+**/__pycache__
+**/*.pyc
