@@ -24,6 +24,9 @@ CLASSES = ['GALAXY', 'STAR', 'QSO']
 # -9999 is a placeholder for no measurement
 PLACEHOLDER = -9999
 
+# Most objects accepted in one /predict request (keeps requests under Lambda's 6 MB payload limit)
+MAX_BATCH_SIZE = 1000
+
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
 
