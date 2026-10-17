@@ -1,20 +1,24 @@
 import boto3
 import pandas as pd
 
-from src.config import DATA_BUCKET, DATA_KEY, DATA_PATH, FILTERS, ID_COLS, PLACEHOLDER
+from src.config import DATA_BUCKET, DATA_KEY, FILTERS, ID_COLS, PLACEHOLDER
+from src.validate import validate_raw_data
 
 
-def load_data(path=DATA_PATH):
-    """Load the SDSS17 CSV and apply the cleaning steps from the analysis notebook."""
+def load_data(source):
+    """Read the SDSS17 CSV (a file path or an open stream), check it, and apply the cleaning steps."""
     # converting ID columns to string
-    df = pd.read_csv(path, dtype={c: str for c in ID_COLS})
+    df = pd.read_csv(source, dtype={c: str for c in ID_COLS})
 
-    # convert MJD to standard datetime
-    df['Date'] = pd.to_datetime(df['MJD'], unit='D', origin='1858-11-17')
+    # Check before cleaning: cleaning reads the magnitude columns and drops placeholder rows,
+    # so a broken file would otherwise crash here or shrink without a warning
+    validate_raw_data(df)
 
     # Drop rows with the -9999 placeholder in any filter (1 row in this dataset).
     # Placeholder, not a real measurement; 0.001% of data.
+    rows_before = len(df)
     df = df[(df[FILTERS] != PLACEHOLDER).all(axis=1)]
+    print(f'Dropped {rows_before - len(df)} rows with the {PLACEHOLDER} placeholder')
 
     return df
 

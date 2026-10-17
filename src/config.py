@@ -27,6 +27,9 @@ PLACEHOLDER = -9999
 # Training-data checks (src/validate.py). The real data has ~100,000 rows and magnitudes between
 # about 9.5 and 33, so these bounds catch broken uploads and garbage values, not faint real objects.
 MIN_ROWS = 10_000
+# Largest share of rows allowed to hold the -9999 placeholder before cleaning drops them.
+# Today it is 1 row in 100,000; a broken export with many placeholders must fail, not shrink quietly.
+MAX_PLACEHOLDER_SHARE = 0.01
 MAG_MIN = 5
 MAG_MAX = 40
 
