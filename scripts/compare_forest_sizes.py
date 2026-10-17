@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 from src.config import FILTERS, RANDOM_STATE
-from src.data import load_data
+from src.data import read_training_data
 from src.model import build_model, split_data
 
 CANDIDATES = [
@@ -36,7 +36,8 @@ def artifact_size_and_load_time(model):
 
 
 def main():
-    X_train, _, y_train, _ = split_data(load_data(), FILTERS)
+    data_version, df = read_training_data()
+    X_train, _, y_train, _ = split_data(df, FILTERS)
 
     # Same 5 folds for every candidate; stratified so each fold keeps the class mix
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)

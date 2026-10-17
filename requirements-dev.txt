@@ -1,4 +1,6 @@
 -r requirements.txt
+awscrt==0.36.0
+boto3[crt]==1.43.114
 matplotlib==3.11.2
 seaborn==0.13.2
 uvicorn==0.54.0

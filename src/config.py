@@ -24,6 +24,12 @@ CLASSES = ['GALAXY', 'STAR', 'QSO']
 # -9999 is a placeholder for no measurement
 PLACEHOLDER = -9999
 
+# Training-data checks (src/validate.py). The real data has ~100,000 rows and magnitudes between
+# about 9.5 and 33, so these bounds catch broken uploads and garbage values, not faint real objects.
+MIN_ROWS = 10_000
+MAG_MIN = 5
+MAG_MAX = 40
+
 # Most objects accepted in one /predict request (keeps requests under Lambda's 6 MB payload limit)
 MAX_BATCH_SIZE = 1000
 
@@ -35,3 +41,7 @@ RANDOM_STATE = 42
 # Best: 100 trees, min_samples_leaf=5, CV 0.8545 ± 0.0021 (15 MB). Chosen: 0.8531 at 7.5 MB,
 # versus 0.8544 at 48 MB for the original 200 unrestricted trees.
 FOREST_PARAMS = {'n_estimators': 50, 'min_samples_leaf': 5}
+
+# AWS S3 data location
+DATA_BUCKET = 'amzn-s3-stellar-data'
+DATA_KEY = 'raw/star_classification.csv'

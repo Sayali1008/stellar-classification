@@ -1,6 +1,7 @@
+import boto3
 import pandas as pd
 
-from src.config import DATA_PATH, FILTERS, ID_COLS, PLACEHOLDER
+from src.config import DATA_BUCKET, DATA_KEY, DATA_PATH, FILTERS, ID_COLS, PLACEHOLDER
 
 
 def load_data(path=DATA_PATH):
@@ -16,3 +17,17 @@ def load_data(path=DATA_PATH):
     df = df[(df[FILTERS] != PLACEHOLDER).all(axis=1)]
 
     return df
+
+
+def read_training_data():
+    """Download the training CSV from S3, clean it, and return (data_version, df)."""
+    s3 = boto3.client('s3')
+    response = s3.get_object(
+        Bucket=DATA_BUCKET,
+        Key=DATA_KEY,
+    )
+
+    print(f'Data: s3://{DATA_BUCKET}/{DATA_KEY} (version {response["VersionId"]})')
+    df = load_data(response['Body'])
+
+    return response['VersionId'], df

@@ -3,7 +3,7 @@
 No plotting imports here: the API loads artifacts too, and the serving image has no matplotlib.
 """
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import joblib
 import sklearn
@@ -12,11 +12,11 @@ from sklearn.metrics import classification_report
 from src.config import METADATA_PATH, MODEL_PATH
 
 
-def build_metadata(model, y_test, test_preds):
+def build_metadata(model, y_test, test_preds, data_version):
     report = classification_report(y_test, test_preds, output_dict=True, zero_division=0)
     return {
         # UTC training time: unique, sorts in time order, needs no stored counter
-        'model_version': f'{datetime.now(timezone.utc):%Y%m%d-%H%M%S}',
+        'model_version': f'{datetime.now(UTC):%Y%m%d-%H%M%S}',
         # A saved model is only guaranteed to load in the same scikit-learn version
         'sklearn_version': sklearn.__version__,
         # Scored on the held-out test set; the API never sees that data, so record it now
@@ -27,6 +27,7 @@ def build_metadata(model, y_test, test_preds):
                 for c in model.classes_
             },
         },
+        'data_version': data_version,
     }
 
 

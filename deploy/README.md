@@ -14,6 +14,7 @@ Live: https://7ld2mronnk2hmj5mfmdup3h4rq0lxwbj.lambda-url.us-east-2.on.aws/
 
 | Resource | Name | Settings |
 |---|---|---|
+| S3 bucket | `amzn-s3-stellar-data` | Private (all four Block Public Access settings on), versioning on, AES-256 encryption; training data at `raw/star_classification.csv` |
 | ECR repository | `stellar-classifier-ecr` | Private, AES-256 encryption; images tagged with the model version |
 | IAM role | `stellar-classifier-lambda` | Trusted by `lambda.amazonaws.com` only; one policy, `AWSLambdaBasicExecutionRole` (write logs) |
 | Lambda function | `myStellarClassificationFunction` | Event function, container image, **arm64**, 1024 MB memory, 30 s timeout, reserved concurrency 2 |
@@ -21,6 +22,33 @@ Live: https://7ld2mronnk2hmj5mfmdup3h4rq0lxwbj.lambda-url.us-east-2.on.aws/
 | Log group | `/aws/lambda/myStellarClassificationFunction` | Created by Lambda on first run |
 
 Region: `us-east-2`. The AWS CLI profile is `stellar` (`aws login --profile stellar`).
+
+## Training data (S3)
+
+`train.py` reads the training data from S3. The Lambda never does: the model is baked into the image,
+so the function's role has no S3 permission.
+
+Versioning keeps every upload: each one gets a new `VersionId`, and older versions stay readable. That
+`VersionId` identifies the exact data a model was trained on.
+
+**Create the bucket** (console: S3 → Create bucket; Block Public Access and AES-256 encryption are on by default)
+```bash
+aws s3api create-bucket --bucket amzn-s3-stellar-data \
+  --create-bucket-configuration LocationConstraint=us-east-2
+aws s3api put-bucket-versioning --bucket amzn-s3-stellar-data \
+  --versioning-configuration Status=Enabled
+```
+
+**Upload the data** (the bucket and key are `DATA_BUCKET` and `DATA_KEY` in `src/config.py`)
+```bash
+aws s3 cp data/star_classification.csv s3://amzn-s3-stellar-data/raw/star_classification.csv
+```
+
+**List the stored versions**
+```bash
+aws s3api list-object-versions --bucket amzn-s3-stellar-data --prefix raw/star_classification.csv \
+  --query 'Versions[].{VersionId:VersionId,Latest:IsLatest,Modified:LastModified}' --output table
+```
 
 ## First-time setup
 

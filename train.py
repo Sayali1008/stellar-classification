@@ -4,14 +4,16 @@ Writes artifacts/model.joblib and artifacts/metadata.json for the API to load.
 """
 from src.artifacts import build_metadata, save_artifacts
 from src.config import FILTERS, METADATA_PATH, MODEL_PATH, OUTPUT_DIR
-from src.data import load_data
+from src.data import read_training_data
 from src.evaluate import feature_importances, plot_confusion_matrix, print_report
 from src.model import build_model, split_data, train
+from src.validate import validate_training_data
 
 
 def main():
-    df = load_data()
+    data_version, df = read_training_data()
     print(f'Loaded {len(df)} rows')
+    validate_training_data(df)
 
     X_train, X_test, y_train, y_test = split_data(df, FILTERS)
 
@@ -29,7 +31,7 @@ def main():
     plot_confusion_matrix(y_test, preds, cm_path)
     print(f'\nConfusion matrix saved to {cm_path}')
 
-    metadata = build_metadata(model, y_test, preds)
+    metadata = build_metadata(model, y_test, preds, data_version)
     size_mb = save_artifacts(model, metadata)
     print(f'Model saved to {MODEL_PATH} ({size_mb:.1f} MB)')
     print(f"Metadata saved to {METADATA_PATH} (version {metadata['model_version']})")
