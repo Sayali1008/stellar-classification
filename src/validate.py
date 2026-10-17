@@ -29,6 +29,10 @@ def _raise_if_problems(problems, stage):
 
 def validate_raw_data(df):
     """Raise ValueError if the CSV as read can't be cleaned safely."""
+    # An empty file makes every other check meaningless (pandas also reads its columns as text)
+    if df.empty:
+        _raise_if_problems(['file has no data rows'], 'Raw training data')
+
     problems = []
 
     # 1. Required columns (cleaning reads the magnitude columns, so check before it runs)
@@ -48,7 +52,7 @@ def validate_raw_data(df):
         problems.append(f'{len(not_numbers)} rows have non-numeric {col} (e.g. {not_numbers.iloc[0]!r})')
 
     # 3. Few placeholder rows. Cleaning drops them, so this is the only place a mass loss shows up.
-    if numeric and len(df):
+    if numeric:
         placeholder_rows = (df[numeric] == PLACEHOLDER).any(axis=1).sum()
         if placeholder_rows / len(df) > MAX_PLACEHOLDER_SHARE:
             problems.append(f'{placeholder_rows} of {len(df)} rows ({placeholder_rows / len(df):.1%}) '

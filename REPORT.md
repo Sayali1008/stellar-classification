@@ -154,14 +154,21 @@ The final model was trained on all training rows and scored once on the test set
 
 ## 10. Reproduce
 
-1. Install the requirements:
+1. Install the training requirements (`requirements.txt` alone is the smaller set the API needs):
    ```bash
-   pip install -r requirements.txt
+   conda env create -f environment.yml
+   conda activate stellar
    ```
-2. Download the SDSS17 stellar classification CSV into `data/star_classification.csv`.
+2. Get the data. `train.py` reads it from a private S3 bucket, so use your own copy:
+   - Download the SDSS17 stellar classification CSV from Kaggle.
+   - Upload it to an S3 bucket of your own with versioning on (see `deploy/README.md`, "Training data (S3)").
+   - Set `DATA_BUCKET` and `DATA_KEY` in `src/config.py` to your bucket and key, and sign in with the AWS CLI.
 3. Run the pipeline:
    ```bash
    python train.py
    ```
 
-It prints the classification report, macro F1 and feature importances, saves the confusion matrix to `outputs/confusion_matrix.png`, and saves the model and its metadata to `artifacts/`.
+To explore without AWS, `src.data.load_data('path/to/star_classification.csv')` reads, validates and
+cleans a local copy in a Python shell.
+
+It prints the data version, validation results, classification report, macro F1 and feature importances, saves the confusion matrix to `outputs/confusion_matrix.png`, and saves the model and its metadata to `artifacts/`.

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_PATH = PROJECT_ROOT / 'data' / 'star_classification.csv'
 OUTPUT_DIR = PROJECT_ROOT / 'outputs'
 
 # Saved model + its metadata, written by train.py and loaded by the API
