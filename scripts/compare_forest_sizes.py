@@ -1,7 +1,8 @@
 """Compare random forest sizes: cross-validated macro F1 vs. saved file size and load time.
 
 A smaller forest means a smaller artifact and a faster Lambda cold start. The test set is not
-used here; the chosen setting goes into FOREST_PARAMS in src/config.py.
+used here; the chosen setting goes into FOREST_PARAMS in src/config.py. Each candidate is also
+recorded in MLflow (experiment 'forest-sizes').
 
 Run from the project root:  python -m scripts.compare_forest_sizes
 """
@@ -10,11 +11,11 @@ import time
 
 import joblib
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold, cross_val_score
 
-from src.config import FILTERS, RANDOM_STATE
+from src.config import FILTERS, FINAL_FEATURES
 from src.data import read_training_data
-from src.model import build_model, split_data
+from src.model import build_model, cv_scores, split_data
+from src.tracking import log_cv_run, start_experiment
 
 CANDIDATES = [
     {'n_estimators': 200},
@@ -39,17 +40,22 @@ def main():
     data_version, df = read_training_data()
     X_train, _, y_train, _ = split_data(df, FILTERS)
 
-    # Same 5 folds for every candidate; stratified so each fold keeps the class mix
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-
+    start_experiment('forest-sizes')
     rows = []
     for params in CANDIDATES:
-        scores = cross_val_score(build_model(**params), X_train, y_train, cv=cv, scoring='f1_macro')
+        scores = cv_scores(build_model(**params), X_train, y_train)
         size_mb, load_s = artifact_size_and_load_time(build_model(**params).fit(X_train, y_train))
+        log_cv_run(
+            ', '.join(f'{k}={v}' for k, v in params.items()),
+            {'features': ','.join(FINAL_FEATURES), **params},
+            scores,
+            data_version,
+            extra_metrics={'size_mb': size_mb, 'load_s': load_s},
+        )
         rows.append({
             'params': str(params),
-            'cv_macro_f1': scores.mean(),
-            'cv_std': scores.std(),
+            'cv_macro_f1': scores['macro_f1'].mean(),
+            'cv_std': scores['macro_f1'].std(),
             'size_mb': size_mb,
             'load_s': load_s,
         })

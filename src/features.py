@@ -15,6 +15,10 @@ def add_colors(df):
     return df
 
 
-def select_final_features(df):
-    """Keep only the columns the model is trained on, in a fixed order."""
-    return df[FINAL_FEATURES]
+def select_final_features(df, features=FINAL_FEATURES):
+    """Keep only the columns the model is trained on, in a fixed order.
+
+    `features` defaults to the final set; the comparison scripts pass other sets. The name stays
+    the same because saved models (model.joblib) refer to this function by name.
+    """
+    return df[features]

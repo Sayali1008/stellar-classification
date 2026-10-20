@@ -18,3 +18,7 @@ data/
 
 # Mine
 mine.txt
+
+# MLflow local artifact folders
+mlruns/
+mlartifacts/

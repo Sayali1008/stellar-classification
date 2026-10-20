@@ -47,3 +47,9 @@ FOREST_PARAMS = {'n_estimators': 50, 'min_samples_leaf': 5}
 # AWS S3 data location
 DATA_BUCKET = 'amzn-s3-stellar-data'
 DATA_KEY = 'raw/star_classification.csv'
+
+# MLflow: params and metrics go to mlflow.db at the project root
+# run files (plots, models) go to the private S3 bucket, next to the training data.
+# Absolute path, so every script uses the same mlflow.db whichever folder it runs from.
+MLFLOW_TRACKING_URI = f'sqlite:///{PROJECT_ROOT / "mlflow.db"}'
+MLFLOW_ARTIFACT_ROOT = f's3://{DATA_BUCKET}/mlflow'
