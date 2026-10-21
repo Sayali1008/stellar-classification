@@ -40,7 +40,7 @@ def log_training_run(model, metadata, confusion_matrix_path):
         'data_version': metadata['data_version'],
     })
 
-    # Read the parameters from the trained model to know whatt were used for this model's training
+    # Read the parameters from the trained model to know what were used for this model's training
     forest_params = forest.get_params()
     mlflow.log_params({
         'features': ','.join(forest.feature_names_in_),

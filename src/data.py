@@ -1,4 +1,3 @@
-import boto3
 import pandas as pd
 
 from src.config import DATA_BUCKET, DATA_KEY, FILTERS, ID_COLS, PLACEHOLDER
@@ -25,6 +24,10 @@ def load_data(source):
 
 def read_training_data():
     """Download the training CSV from S3, clean it, and return (data_version, df)."""
+    # Imported here, not at the top: only this function needs boto3, so load_data can be imported
+    # (and tested) without it
+    import boto3
+
     s3 = boto3.client('s3')
     response = s3.get_object(
         Bucket=DATA_BUCKET,
