@@ -48,6 +48,18 @@ FOREST_PARAMS = {'n_estimators': 50, 'min_samples_leaf': 5}
 DATA_BUCKET = 'amzn-s3-stellar-data'
 DATA_KEY = 'raw/star_classification.csv'
 
+# Every model that passes the deploy gate is stored at s3://DATA_BUCKET/MODELS_PREFIX/<model_version>/
+MODELS_PREFIX = 'models'
+
+# The live API. The deploy gate asks its /health which model is serving, to compare against it.
+LIVE_URL = 'https://7ld2mronnk2hmj5mfmdup3h4rq0lxwbj.lambda-url.us-east-2.on.aws'
+
+# Deploy gate (src/gate.py), on the new test split:
+# a new model must reach the floor, and score at least the live model's macro F1 minus the tolerance.
+# The tolerance lets a model that ties (same data, same seed) or differs by noise through.
+GATE_MIN_F1 = 0.84
+F1_TOLERANCE = 0.005
+
 # MLflow: params and metrics go to mlflow.db at the project root
 # run files (plots, models) go to the private S3 bucket, next to the training data.
 # Absolute path, so every script uses the same mlflow.db whichever folder it runs from.

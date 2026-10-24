@@ -14,18 +14,26 @@ from src.config import FILTERS, METADATA_PATH, MODEL_PATH
 from src.schemas import Prediction, StellarObject
 
 
-@lru_cache(maxsize=1)
-def load_model():
-    """Read model.joblib and metadata.json from disk on the first call; later calls reuse them."""
-    metadata = json.loads(METADATA_PATH.read_text())
+def read_model(model_path, metadata_path):
+    """Read a saved model and its metadata, refusing a model saved with another scikit-learn.
+
+    Used by load_model below (the API's model) and by the deploy gate (the live model from S3).
+    """
+    metadata = json.loads(metadata_path.read_text())
     # A pickled scikit-learn model is only guaranteed to load correctly in the version that saved it
     if metadata['sklearn_version'] != sklearn.__version__:
         raise RuntimeError(
             f"Model was saved with scikit-learn {metadata['sklearn_version']}, "
             f"but {sklearn.__version__} is installed. Retrain or pin the same version."
         )
-    model = joblib.load(MODEL_PATH)
+    model = joblib.load(model_path)
     return model, metadata
+
+
+@lru_cache(maxsize=1)
+def load_model():
+    """Read model.joblib and metadata.json from disk on the first call; later calls reuse them."""
+    return read_model(MODEL_PATH, METADATA_PATH)
 
 
 def model_version():

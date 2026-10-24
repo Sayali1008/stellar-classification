@@ -1,6 +1,7 @@
 # Run the test suite on GitHub's servers on every push, to any branch.
 # Lean install (requirements-test.txt) and no AWS access, so tests/test_smoke.py is skipped:
-# it needs the private training data in S3.
+# it needs the private training data in S3. Deploying runs from a laptop instead (deploy/deploy.sh):
+# this AWS account type blocks GitHub's keyless sign-in (OIDC).
 name: CI
 
 on: push

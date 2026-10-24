@@ -14,8 +14,8 @@ Live: https://7ld2mronnk2hmj5mfmdup3h4rq0lxwbj.lambda-url.us-east-2.on.aws/
 
 | Resource | Name | Settings |
 |---|---|---|
-| S3 bucket | `amzn-s3-stellar-data` | Private (all four Block Public Access settings on), versioning on, AES-256 encryption; training data at `raw/star_classification.csv` |
-| ECR repository | `stellar-classifier-ecr` | Private, AES-256 encryption; images tagged with the model version |
+| S3 bucket | `amzn-s3-stellar-data` | Private (all four Block Public Access settings on), versioning on, AES-256 encryption; training data at `raw/star_classification.csv`; every model that passed the deploy gate at `models/<model_version>/` |
+| ECR repository | `stellar-classifier-ecr` | Private, AES-256 encryption; images tagged with the model version; tags immutable; lifecycle policy keeps the 3 newest images |
 | IAM role | `stellar-classifier-lambda` | Trusted by `lambda.amazonaws.com` only; one policy, `AWSLambdaBasicExecutionRole` (write logs) |
 | Lambda function | `myStellarClassificationFunction` | Event function, container image, **arm64**, 1024 MB memory, 30 s timeout, reserved concurrency 2 |
 | Function URL | (see above) | Auth type `NONE`; resource policy allows invoking only through the URL |
@@ -120,16 +120,70 @@ aws lambda add-permission --function-name $FUNCTION --statement-id FunctionURLAl
   --action lambda:InvokeFunction --principal "*" --invoked-via-function-url
 ```
 
-## Deploying a new version
+## Deploying (`deploy/deploy.sh`)
 
-After retraining or changing serving code: run steps 0, 1 and 3 (new `TAG`), then point the function at the new image.
+Deploys run from this laptop, signed in as you:
+```bash
+aws login --profile stellar
+./deploy/deploy.sh
+```
+
+```
+smoke test on the real data ─▶ train + deploy gate ─▶ store model in S3 ─▶ build + push image
+                            ─▶ update the Lambda ─▶ check /health serves the new version
+```
+
+- **Why not GitHub Actions:** CD from GitHub needs GitHub to sign in to AWS. The keyless way (OIDC) is
+  blocked in this account: the AWS-managed organization behind the new sign-up experience denies every
+  `iam:*OpenIDConnectProvider*` action in a service control policy, which no permission inside the account
+  can override. The alternative, long-lived access keys stored in GitHub, was not used. GitHub Actions
+  still runs the tests on every push (`.github/workflows/ci.yml`).
+- **Deploy gate** (`src/gate.py`, run by `train.py --deploy`): the live model (found through `/health`,
+  downloaded from `models/<version>/`) and the new model are scored on the same new test split. The new
+  model deploys if its macro F1 is at least 0.84 and at least the live model's minus 0.005. If the live
+  model can't be compared, only the 0.84 floor applies and the output says why. The result is stored in
+  `models/<version>/metrics.json`.
+- **A failing step stops the script.** A model that fails the gate is never built or deployed, and the
+  live site keeps serving the old one.
+- Commit before deploying, so the code behind the live image is in git.
+
+### One-time setup
+
+Run these once, signed in (`aws login --profile stellar`), from the project root.
+
+**1. ECR: immutable tags, keep the 3 newest images**
+```bash
+aws ecr put-image-tag-mutability --repository-name stellar-classifier-ecr --image-tag-mutability IMMUTABLE \
+  --profile stellar --region us-east-2
+aws ecr put-lifecycle-policy --repository-name stellar-classifier-ecr \
+  --lifecycle-policy-text file://deploy/ecr-lifecycle.json --profile stellar --region us-east-2
+```
+With 3 images kept, rollback reaches two versions back. Older models stay in `models/` in S3 and can
+be rebuilt into an image.
+
+**2. Put the live model into `models/`**, so the first deploy has a champion to compare against.
+`artifacts/` must hold the model that is live: check the two versions match first.
+```bash
+curl -s https://7ld2mronnk2hmj5mfmdup3h4rq0lxwbj.lambda-url.us-east-2.on.aws/health
+export LIVE=$(python -c "import json; print(json.load(open('artifacts/metadata.json'))['model_version'])")
+echo $LIVE
+aws s3 cp artifacts/model.joblib s3://amzn-s3-stellar-data/models/$LIVE/model.joblib --profile stellar
+aws s3 cp artifacts/metadata.json s3://amzn-s3-stellar-data/models/$LIVE/metadata.json --profile stellar
+```
+
+## Deploying step by step (without the gate) and rollback
+
+`deploy/deploy.sh` is the normal way. Step by step instead: run steps 0, 1 and 3 of "First-time setup"
+(new `TAG`), then point the function at the new image.
 ```bash
 aws lambda update-function-code --function-name $FUNCTION --image-uri $REPO_URI:$TAG
 aws lambda wait function-updated-v2 --function-name $FUNCTION
 ```
 Check that `/health` reports the new `model_version`, and open the URL once before sharing it (see cold starts below).
 
-**Rollback:** run `update-function-code` with the previous image tag. Every pushed image stays in ECR under its model version.
+**Rollback:** run `update-function-code` with the previous image tag (the 3 newest images are kept;
+`aws ecr list-images --repository-name stellar-classifier-ecr` lists them). If the deploy script's
+`/health` check fails, roll back this way.
 
 ## Testing
 
