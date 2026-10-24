@@ -5,10 +5,12 @@ scored on the new model's test split, so both numbers come from the same objects
 version changes. The new model (the challenger) passes if it reaches GATE_MIN_F1 and scores at least
 the live model's macro F1 minus F1_TOLERANCE.
 
-If the live model can't be compared (site down, not in S3, saved with another scikit-learn), only
-the floor applies, and the reason is printed. Used by `train.py --deploy` (deploy/deploy.sh).
+If the live model can't be compared (site down, not in S3, saved with another scikit-learn), the
+gate fails and prints why. Set ALLOW_FLOOR_ONLY=1 to deploy against the floor alone instead (e.g. the
+first deploy, before models/ holds a live model). Used by `train.py --deploy` (deploy/deploy.sh).
 """
 import json
+import os
 import tempfile
 import urllib.request
 from pathlib import Path
@@ -67,11 +69,14 @@ def run_gate(metadata, X_test, y_test):
         live_model, _ = download_live_model(live_version)
         live_f1 = float(f1_score(y_test, live_model.predict(X_test), average='macro'))
     except Exception as error:
-        # Any failure to compare leaves the floor as the only check; say why in the log
-        note = f'live model not compared ({type(error).__name__}: {error}); floor only'
+        note = f'live model not compared ({type(error).__name__}: {error})'
         print(f'Gate: {note}')
 
-    passed, reason = decide(new_f1, live_f1)
+    if live_f1 is None and os.environ.get('ALLOW_FLOOR_ONLY') != '1':
+        # A failed comparison means something is wrong; deploying on the floor alone must be a choice
+        passed, reason = False, f'{note}; set ALLOW_FLOOR_ONLY=1 to deploy on the {GATE_MIN_F1} floor alone'
+    else:
+        passed, reason = decide(new_f1, live_f1)
     print(f"Gate {'PASSED' if passed else 'FAILED'}: {reason}")
     return {
         'model_version': metadata['model_version'],

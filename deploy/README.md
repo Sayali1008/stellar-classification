@@ -141,8 +141,9 @@ smoke test on the real data ─▶ train + deploy gate ─▶ store model in S3 
 - **Deploy gate** (`src/gate.py`, run by `train.py --deploy`): the live model (found through `/health`,
   downloaded from `models/<version>/`) and the new model are scored on the same new test split. The new
   model deploys if its macro F1 is at least 0.84 and at least the live model's minus 0.005. If the live
-  model can't be compared, only the 0.84 floor applies and the output says why. The result is stored in
-  `models/<version>/metrics.json`.
+  model can't be compared (e.g. `/health` timed out, or the live version isn't in `models/`), the gate
+  fails and the output says why. To deploy on the 0.84 floor alone, for example the very first deploy,
+  run `ALLOW_FLOOR_ONLY=1 ./deploy/deploy.sh`. The result is stored in `models/<version>/metrics.json`.
 - **A failing step stops the script.** A model that fails the gate is never built or deployed, and the
   live site keeps serving the old one.
 - Commit before deploying, so the code behind the live image is in git.
