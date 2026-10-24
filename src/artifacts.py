@@ -9,10 +9,22 @@ import joblib
 import sklearn
 from sklearn.metrics import classification_report
 
-from src.config import METADATA_PATH, MODEL_PATH
+from src.config import FILTERS, INPUT_RANGE_QUANTILES, METADATA_PATH, MODEL_PATH
 
 
-def build_metadata(model, y_test, test_preds, data_version):
+def input_stats(X_train):
+    """Each filter's training range (the INPUT_RANGE_QUANTILES percentiles), for the API's warnings.
+
+    From the training split only: that is the data the model learned from.
+    """
+    low_q, high_q = INPUT_RANGE_QUANTILES
+    return {
+        'range_quantiles': [low_q, high_q],
+        'ranges': {f: [float(X_train[f].quantile(low_q)), float(X_train[f].quantile(high_q))] for f in FILTERS},
+    }
+
+
+def build_metadata(model, X_train, y_test, test_preds, data_version):
     report = classification_report(y_test, test_preds, output_dict=True, zero_division=0)
     return {
         # UTC training time: unique, sorts in time order, needs no stored counter
@@ -28,6 +40,8 @@ def build_metadata(model, y_test, test_preds, data_version):
             },
         },
         'data_version': data_version,
+        # The Lambda can't see the training data, so what "usual" looks like travels with the model
+        'input_stats': input_stats(X_train),
     }
 
 

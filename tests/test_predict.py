@@ -3,6 +3,7 @@
 Runs against tiny_model, saved to a temp folder by the fixtures; use_test_model points
 src.predict at it.
 """
+import json
 import subprocess
 import sys
 
@@ -11,6 +12,7 @@ import numpy as np
 import pytest
 import sklearn
 
+import src.predict
 from src.config import CLASSES, FILTERS, PROJECT_ROOT
 from src.predict import load_model, model_version, predict
 from src.schemas import StellarObject
@@ -61,6 +63,45 @@ def test_probabilities_are_one_per_class_and_sum_to_one(use_test_model, class_ce
         assert sum(pred.probabilities.values()) == pytest.approx(1, abs=0.01)
         # The predicted class is the one with the highest probability
         assert pred.probabilities[pred.predicted_class] == max(pred.probabilities.values())
+
+
+def test_metadata_records_each_filter_training_range(use_test_model):
+    _, metadata = load_model()
+    stats = metadata['input_stats']
+    assert stats['range_quantiles'] == [0.01, 0.99]
+    assert set(stats['ranges']) == set(FILTERS)
+    for low, high in stats['ranges'].values():
+        assert low < high
+
+
+def test_typical_objects_get_no_warnings(use_test_model, class_centers):
+    for pred in predict(objects(class_centers.values())):
+        assert pred.warnings == []
+
+
+def test_warns_once_per_filter_outside_the_training_range(use_test_model, class_centers):
+    # Far brighter in u, far fainter in r: magnitudes work backwards
+    extreme = {**class_centers['STAR'], 'u': 5.0, 'r': 40.0}
+    [pred] = predict(objects([extreme]))
+    assert len(pred.warnings) == 2
+    assert pred.warnings[0].startswith('u = 5.00 is brighter than 99% of training objects')
+    assert pred.warnings[1].startswith('r = 40.00 is fainter than 99% of training objects')
+    # Still a normal prediction: the warning flags the answer, it doesn't replace it
+    assert set(pred.probabilities) == set(CLASSES)
+
+
+def test_model_without_input_stats_gets_no_warnings(use_test_model, monkeypatch, tmp_path, class_centers):
+    # Models saved before input_stats existed (e.g. after a rollback) must still serve
+    model_path, metadata_path = use_test_model
+    old_metadata = json.loads(metadata_path.read_text())
+    del old_metadata['input_stats']
+    old_path = tmp_path / 'metadata.json'
+    old_path.write_text(json.dumps(old_metadata))
+    monkeypatch.setattr(src.predict, 'METADATA_PATH', old_path)
+    load_model.cache_clear()
+
+    [pred] = predict(objects([{**class_centers['STAR'], 'r': 40.0}]))
+    assert pred.warnings == []
 
 
 def test_empty_batch_returns_no_predictions(use_test_model):

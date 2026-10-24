@@ -45,7 +45,7 @@ def train_and_save():
     plot_confusion_matrix(y_test, preds, cm_path)
     print(f'\nConfusion matrix saved to {cm_path}')
 
-    metadata = build_metadata(model, y_test, preds, data_version)
+    metadata = build_metadata(model, X_train, y_test, preds, data_version)
     size_mb = save_artifacts(model, metadata)
     print(f'Model saved to {MODEL_PATH} ({size_mb:.1f} MB)')
     print(f"Metadata saved to {METADATA_PATH} (version {metadata['model_version']})")

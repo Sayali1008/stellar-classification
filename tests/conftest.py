@@ -84,7 +84,8 @@ def model_artifacts(tiny_model, synthetic_df, tmp_path_factory):
     model_path, metadata_path = folder / 'model.joblib', folder / 'metadata.json'
 
     preds = tiny_model.predict(synthetic_df[FILTERS])
-    metadata = build_metadata(tiny_model, synthetic_df[TARGET], preds, data_version='synthetic')
+    metadata = build_metadata(tiny_model, synthetic_df[FILTERS], synthetic_df[TARGET], preds,
+                              data_version='synthetic')
 
     # save_artifacts writes to the paths in src.artifacts; point them at the temp folder for this call
     with pytest.MonkeyPatch.context() as mp:

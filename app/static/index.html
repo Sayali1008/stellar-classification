@@ -7,12 +7,12 @@
 <style>
   :root {
     --bg: #f7f7f5; --card: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --border: #dcdcdf;
-    --accent: #3b5bdb; --accent-text: #ffffff; --bar-bg: #ececef; --error: #c92a2a;
+    --accent: #3b5bdb; --accent-text: #ffffff; --bar-bg: #ececef; --error: #c92a2a; --warn: #9c6500;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #141416; --card: #1e1e21; --text: #ececf0; --muted: #9a9aa3; --border: #34343a;
-      --accent: #748ffc; --accent-text: #0d0d10; --bar-bg: #2c2c31; --error: #ff8787;
+      --accent: #748ffc; --accent-text: #0d0d10; --bar-bg: #2c2c31; --error: #ff8787; --warn: #ffc078;
     }
   }
   * { box-sizing: border-box; }
@@ -45,6 +45,7 @@
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .meta { color: var(--muted); font-size: 0.85rem; margin-top: 12px; }
   .error { color: var(--error); }
+  .warnings { color: var(--warn); font-size: 0.9rem; margin: 12px 0 0; padding-left: 18px; }
   footer { color: var(--muted); font-size: 0.85rem; }
   footer a { color: inherit; }
   @media (max-width: 420px) { .inputs { grid-template-columns: repeat(3, 1fr); } }
@@ -140,6 +141,17 @@
       <p class="verdict">${NAMES[prediction.predicted_class] || prediction.predicted_class}</p>
       ${rows}
       <p class="meta">Model version ${version}</p>`;
+    // Inputs outside the training range: the answer above is less trustworthy
+    if (prediction.warnings && prediction.warnings.length) {
+      const list = document.createElement('ul');
+      list.className = 'warnings';
+      prediction.warnings.forEach(w => {
+        const item = document.createElement('li');
+        item.textContent = w;
+        list.appendChild(item);
+      });
+      result.querySelector('.meta').before(list);
+    }
     result.hidden = false;
   }
 

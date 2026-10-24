@@ -32,6 +32,10 @@ MAX_PLACEHOLDER_SHARE = 0.01
 MAG_MIN = 5
 MAG_MAX = 40
 
+# Out-of-range warnings (src/predict.py): the training range of each filter, recorded in metadata.json,
+# runs from the 1st to the 99th percentile. About 6% of real objects fall outside it on some filter.
+INPUT_RANGE_QUANTILES = (0.01, 0.99)
+
 # Most objects accepted in one /predict request (keeps requests under Lambda's 6 MB payload limit)
 MAX_BATCH_SIZE = 1000
 

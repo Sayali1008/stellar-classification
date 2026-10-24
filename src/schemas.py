@@ -27,6 +27,8 @@ class StellarObject(BaseModel):
 class Prediction(BaseModel):
     predicted_class: str
     probabilities: dict[str, float] # One probability per class, by class name; they should sum to 1
+    # One message per filter outside the training range: the answer is less trustworthy there
+    warnings: list[str] = []
 
 
 class PredictRequest(BaseModel):

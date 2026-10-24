@@ -52,6 +52,15 @@ def test_predict_classifies_a_batch_in_order(client, class_centers):
         assert set(prediction['probabilities']) == set(CLASSES)
 
 
+def test_predict_returns_range_warnings(client, class_centers):
+    response = client.post('/predict', json=body(class_centers['STAR'], {**class_centers['STAR'], 'r': 40.0}))
+    assert response.status_code == 200
+    typical, extreme = response.json()['predictions']
+    assert typical['warnings'] == []
+    assert len(extreme['warnings']) == 1
+    assert extreme['warnings'][0].startswith('r = 40.00 is fainter')
+
+
 def test_predict_explains_a_placeholder(client, class_centers):
     response = client.post('/predict', json=body({**class_centers['STAR'], 'u': PLACEHOLDER}))
     assert response.status_code == 422
